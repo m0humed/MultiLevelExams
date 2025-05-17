@@ -8,6 +8,7 @@ import {
   Exam,
   ExamStage,
   Question,
+  mockStudentProgress,
 } from '../../data/mockData';
 import { 
   ArrowLeft, 
@@ -61,6 +62,7 @@ const StageExam = () => {
     setStage(stageData);
     setTimeLeft(stageData.duration * 60); // Convert minutes to seconds
     setExamState('in_progress');
+    setCurrentQuestionIndex(0); // <-- Add this line
 
     // Initialize empty answers
     const initialAnswers: { [questionId: string]: string | string[] } = {};
@@ -151,6 +153,43 @@ const StageExam = () => {
         totalQuestions: stage.questions.length,
       });
       setExamState('completed');
+
+      // --- Add this block to update mockStudentProgress dynamically ---
+      if (user && exam && stage) {
+        const idx = mockStudentProgress.findIndex(
+          p => p.studentId === user.id && p.examId === exam.id && p.stageId === stage.id
+        );
+        if (idx !== -1) {
+          mockStudentProgress[idx] = {
+            ...mockStudentProgress[idx],
+            completed: true,
+            score: scorePercentage,
+            passed,
+            completedAt: new Date().toISOString(),
+          };
+        } else {
+          mockStudentProgress.push({
+            studentId: user.id,
+            examId: exam.id,
+            stageId: stage.id,
+            completed: true,
+            score: scorePercentage,
+            passed,
+            startedAt: '', // You can set this as needed
+            completedAt: new Date().toISOString(),
+          });
+        }
+      }
+      // ---------------------------------------------------------------
+      
+      if (passed && exam) {
+        const nextStage = exam.stages.find(s => s.order === stage.order + 1);
+        if (nextStage) {
+          setTimeout(() => {
+            navigate(`/exams/${exam.id}/stage/${nextStage.id}`);
+          }, 2000); // Wait 2 seconds before navigating
+        }
+      }
     }, 1500);
   };
 
