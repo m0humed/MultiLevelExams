@@ -154,6 +154,20 @@ const StageExam = () => {
     }, 1500);
   };
 
+  const resetStage = () => {
+    if (!stage) return;
+    setCurrentQuestionIndex(0);
+    setAnswers(
+      stage.questions.reduce((acc, q) => {
+        acc[q.id] = q.type === 'multiple-choice' ? '' : '';
+        return acc;
+      }, {} as { [questionId: string]: string | string[] })
+    );
+    setTimeLeft(stage.duration * 60);
+    setExamState('in_progress');
+    setExamResult(null);
+  };
+
   if (examState === 'loading' || !stage || !exam) {
     return (
       <div className="flex h-64 items-center justify-center">
@@ -241,9 +255,10 @@ const StageExam = () => {
                 </button>
               )}
               
+              
               {!examResult.passed && (
                 <button
-                  onClick={() => window.location.reload()}
+                  onClick={resetStage}
                   className="inline-flex items-center justify-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
                 >
                   <ArrowRight size={16} className="mr-2" />
@@ -255,7 +270,9 @@ const StageExam = () => {
         </motion.div>
       </div>
     );
+    
   }
+
 
   if (examState === 'submitting') {
     return (
