@@ -33,6 +33,7 @@ export interface Exam {
 }
 
 export interface StudentProgress {
+  answers: any;
   studentId: string;
   examId: string;
   stageId: string;
@@ -757,6 +758,7 @@ export const mockStudentProgress: StudentProgress[] = [
     passed: true,
     startedAt: '2024-04-10T09:15:00Z',
     completedAt: '2024-04-10T09:40:00Z',
+    answers: undefined
   },
   {
     studentId: '2',
@@ -766,6 +768,7 @@ export const mockStudentProgress: StudentProgress[] = [
     score: 0,
     passed: false,
     startedAt: '2024-04-10T10:00:00Z',
+    answers: undefined
   },
 ];
 

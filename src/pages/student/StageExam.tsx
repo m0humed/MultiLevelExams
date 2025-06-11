@@ -177,6 +177,7 @@ const StageExam = () => {
             passed,
             startedAt: '', // You can set this as needed
             completedAt: new Date().toISOString(),
+            answers: undefined
           });
         }
       }
@@ -222,6 +223,18 @@ const StageExam = () => {
     const remainingSeconds = seconds % 60;
     return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
   };
+
+  // Add this helper inside your component
+  const allQuestionsAnswered = stage.questions.every(q => {
+    const ans = answers[q.id];
+    if (q.type === 'multiple-choice' || q.type === 'true-false') {
+      return !!ans;
+    }
+    if (q.type === 'short-answer') {
+      return typeof ans === 'string' && ans.trim() !== '';
+    }
+    return false;
+  });
 
   if (examState === 'completed' && examResult) {
     return (
@@ -457,7 +470,10 @@ const StageExam = () => {
         ) : (
           <button
             onClick={handleSubmit}
-            className="inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
+            disabled={!allQuestionsAnswered}
+            className={`inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 ${
+              !allQuestionsAnswered ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
           >
             Submit Exam
             <CheckCircle size={16} className="ml-2" />
