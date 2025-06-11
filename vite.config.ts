@@ -5,7 +5,9 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   server: {
-    // No need for historyApiFallback in Vite; Vite handles SPA fallback by default.
+    proxy: {
+      '/api': 'http://localhost:5000',
+    },
   },
   optimizeDeps: {
     exclude: ['lucide-react'],

@@ -2,7 +2,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import authRoutes from './routes/auth';
+import authRoutes from './routes/auth.js'; // Note the .js extension for ES modules
 
 dotenv.config();
 
@@ -26,4 +26,4 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-export default app;
+// No need for module.exports in ES modules

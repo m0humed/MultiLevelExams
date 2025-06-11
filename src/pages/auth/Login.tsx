@@ -6,11 +6,12 @@ import { AlertCircle } from 'lucide-react';
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState<'student' | 'instructor'>('student');
   const { login, isLoading, error } = useAuth();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    await login(email, password);
+    await login(email, password, role);
   };
 
   return (
@@ -38,6 +39,22 @@ const Login = () => {
             placeholder="you@example.com"
             required
           />
+        </div>
+        
+        <div className="mb-4">
+          <label htmlFor="role" className="mb-1 block text-sm font-medium text-gray-700">
+            Role
+          </label>
+          <select
+            id="role"
+            value={role}
+            onChange={(e) => setRole(e.target.value as 'student' | 'instructor')}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+            required
+          >
+            <option value="student">Student</option>
+            <option value="instructor">Instructor</option>
+          </select>
         </div>
         
         <div className="mb-6">
@@ -86,3 +103,16 @@ const Login = () => {
 };
 
 export default Login;
+
+export async function login(email: string, password: string, role: 'student' | 'instructor') {
+  const res = await fetch('/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password, role }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Login failed');
+  }
+  return data.user;
+}

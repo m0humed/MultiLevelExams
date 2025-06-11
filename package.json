@@ -7,9 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "server": "ts-node-dev --respawn src/server/index.ts",
-    "dev:fullstack": "concurrently \"vite\" \"ts-node-dev --respawn src/server/index.ts\""
+    "preview": "vite preview"
   },
   "dependencies": {
     "clsx": "^2.1.0",
@@ -50,5 +48,6 @@
     "typescript": "^5.8.3",
     "typescript-eslint": "^7.3.1",
     "vite": "^6.3.5"
-  }
+  },
+  "proxy": "http://localhost:5000"
 }
