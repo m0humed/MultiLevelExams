@@ -77,11 +77,11 @@ const Login = () => {
         </div>
         
         {/* Demo account info */}
-        <div className="mb-4 rounded-md bg-gray-50 p-3 text-xs text-gray-700">
+        {/* <div className="mb-4 rounded-md bg-gray-50 p-3 text-xs text-gray-700">
           <p className="font-medium">Demo Accounts:</p>
           <p className="mt-1">- Instructor: instructor@example.com / password</p>
           <p>- Student: student@example.com / password</p>
-        </div>
+        </div> */}
         
         <button
           type="submit"

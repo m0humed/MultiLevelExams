@@ -34,6 +34,7 @@ const ExamDetails = () => {
 
   const [exam, setExam] = useState<Exam | null>(null);
   const [stageProgress, setStageProgress] = useState<{ [stageOrder: number]: StageProgress }>({});
+  const [currentStageOrder, setCurrentStageOrder] = useState<number>(1);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -56,6 +57,13 @@ const ExamDetails = () => {
         });
         setStageProgress(progressMap);
         setLoading(false);
+      });
+
+    // Fetch current stage order for this student in this exam
+    fetch(`/api/exams/${examId}/stage-progress/${user.id}`)
+      .then(res => res.json())
+      .then(data => {
+        setCurrentStageOrder(data.current_stage_order || 1);
       });
   }, [examId, user, navigate]);
 
@@ -80,9 +88,7 @@ const ExamDetails = () => {
   };
 
   const isStageAccessible = (stageOrder: number) => {
-    if (stageOrder === 1) return true;
-    const prevProgress = stageProgress[stageOrder - 1];
-    return prevProgress && prevProgress.status === 'completed';
+    return stageOrder <= currentStageOrder;
   };
 
   const getStageStatus = (stage: Stage) => {
@@ -91,6 +97,11 @@ const ExamDetails = () => {
       return isStageAccessible(stage.stage_order) ? 'available' : 'locked';
     }
     if (progress.status === 'completed') {
+      // If the next stage is accessible, treat as 'passed'
+      const nextStageOrder = stage.stage_order + 1;
+      if (isStageAccessible(nextStageOrder)) {
+      return 'passed';
+      }
       return progress.passed ? 'passed' : 'failed';
     }
     return 'in_progress';

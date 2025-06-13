@@ -49,5 +49,5 @@
     "typescript-eslint": "^7.3.1",
     "vite": "^6.3.5"
   },
-  "proxy": "http://localhost:5000"
+  "proxy": "https://multilevelexambackend-production.up.railway.app"
 }

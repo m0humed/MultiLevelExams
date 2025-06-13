@@ -119,41 +119,40 @@ router.get('/progress/:studentId', async (req, res) => {
 router.post('/submit-stage', async (req, res) => {
   const { studentId, examId, stageId, answers } = req.body;
   try {
-    console.log(answers);
-    // Find the stage order for this stage
-    //console.log(`Submitting stage for student ${studentId}, exam ${examId}, stage ${stageId}`);
+    // Get stage order and passing score
     const stageRes = await pool.query(
-      `SELECT stage_order FROM stages WHERE stage_id = $1`,
+      `SELECT stage_order, passing_score FROM stages WHERE stage_id = $1`,
       [stageId]
     );
     if (stageRes.rowCount === 0) return res.status(400).json({ error: 'Invalid stageId' });
     const stageOrder = stageRes.rows[0].stage_order;
-    //console.log(`Stage order for stage ${stageId} is ${typeof(stageOrder)}`);
+    const passingScore = parseFloat(stageRes.rows[0].passing_score);
 
-    // Create a new session or update existing (current_stage is INT in schema)
-    
+    // Get all questions for this stage
+    const questionsRes = await pool.query(
+      `SELECT question_id, correct_answer FROM questions WHERE stage_id = $1`,
+      [stageId]
+    );
+    const questions = questionsRes.rows;
+
+    // Find or create session
     let session = await pool.query(
       `SELECT * FROM exam_sessions WHERE student_id = $1 AND exam_id = $2 AND current_stage = $3 AND status = 'in_progress'`,
       [studentId, examId, stageOrder]
     );
-    //console.log(`Found session: ${JSON.stringify(session)}`);
     let sessionId;
-    //console.log(`Session row count: ${session.rowCount}`);
     if (session.rowCount === 0) {
       const newSession = await pool.query(
         `INSERT INTO exam_sessions (student_id, exam_id, current_stage, status) VALUES ($1, $2, $3, 'in_progress') RETURNING session_id`,
         [studentId, examId, stageOrder]
       );
-
       sessionId = newSession.rows[0].session_id;
     } else {
       sessionId = session.rows[0].session_id;
     }
-    //console.log(`Session ID: ${sessionId}`);
 
-    // Save answers (answer_id is auto-generated, session_id + question_id is unique for ON CONFLICT)
+    // Save answers
     for (const q of answers) {
-      console.log(`Saving answer for question ${q.questionId}: ${q.selectedAnswer} (correct: ${q.isCorrect})`);
       await pool.query(
         `INSERT INTO student_answers (session_id, question_id, selected_answer, is_correct)
          VALUES ($1, $2, $3, $4)
@@ -168,8 +167,33 @@ router.post('/submit-stage', async (req, res) => {
       [sessionId]
     );
 
+    // Calculate score and check if passed
+    const totalQuestions = questions.length;
+    const correctAnswers = answers.filter(q => q.isCorrect).length;
+    const scorePercentage = (correctAnswers / totalQuestions) * 100;
+
+    // Get max stage order for this exam
+    const maxStageRes = await pool.query(
+      `SELECT MAX(stage_order) AS max_stage_order FROM stages WHERE exam_id = $1`,
+      [examId]
+    );
+    const maxStageOrder = parseInt(maxStageRes.rows[0].max_stage_order, 10);
+
+    if (scorePercentage >= passingScore) {
+      // Passed: update or insert student_stage_progress, but do not exceed max stage order + 1
+      const nextStageOrder = Math.min(stageOrder + 1, maxStageOrder + 1);
+      await pool.query(
+        `INSERT INTO student_stage_progress (student_id, exam_id, current_stage_order)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (student_id, exam_id)
+         DO UPDATE SET current_stage_order = GREATEST(student_stage_progress.current_stage_order, $3)`,
+        [studentId, examId, nextStageOrder]
+      );
+    }
+
     res.json({ success: true });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -268,6 +292,26 @@ router.get('/:examId/progress/:studentId', async (req, res) => {
       [examId, studentId]
     );
     res.json(sessions.rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// GET /api/exams/:examId/stage-progress/:studentId
+router.get('/:examId/stage-progress/:studentId', async (req, res) => {
+  const { examId, studentId } = req.params;
+  //console.log(`Fetching stage progress for exam ${examId} and student ${studentId}`);
+  try {
+    const result = await pool.query(
+      `SELECT current_stage_order FROM student_stage_progress WHERE exam_id = $1 AND student_id = $2`,
+      [examId, studentId]
+    );
+    //console.log(result.rowCount);
+    if (result.rowCount === 0) {
+      // If no progress, only stage 1 is open
+      return res.json({ current_stage_order: 1 });
+    }
+    res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }
