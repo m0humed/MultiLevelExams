@@ -16,7 +16,7 @@ const ReviewExam = () => {
   // Move these hooks to the top
   const [allQuestions, setAllQuestions] = useState<any[]>([]);
   useEffect(() => {
-    fetch(`/api/exams/stages/${stageId}`)
+    fetch(`https://multilevelexambackend-production.up.railway.app/api/exams/stages/${stageId}`)
       .then(res => res.json())
       .then(data => setAllQuestions(data.questions || []));
   }, [stageId]);
@@ -25,12 +25,12 @@ const ReviewExam = () => {
     if (!user || !examId || !stageId) return;
 
     // Fetch stage info (for title/description)
-    fetch(`/api/exams/stages/${stageId}`)
+    fetch(`https://multilevelexambackend-production.up.railway.app/api/exams/stages/${stageId}`)
       .then(res => res.json())
       .then(data => setStage(data));
 
     // Fetch review data (student answers + questions + options)
-    fetch(`/api/exams/reviewdetails?studentId=${user.id}&examId=${examId}&stageId=${stageId}`)
+    fetch(`https://multilevelexambackend-production.up.railway.app/api/exams/reviewdetails?studentId=${user.id}&examId=${examId}&stageId=${stageId}`)
       .then(res => res.json())
       .then(data => {
         if (data && data.answers) {

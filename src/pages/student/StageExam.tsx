@@ -28,7 +28,7 @@ const StageExam = () => {
   // Fetch stage and questions
   useEffect(() => {
     if (!stageId) return;
-    fetch(`/api/exams/stages/${stageId}`)
+    fetch(`https://multilevelexambackend-production.up.railway.app/api/exams/stages/${stageId}`)
       .then(res => res.json())
       .then(data => {
         setStage(data);
@@ -48,7 +48,7 @@ const StageExam = () => {
   // Fetch exam info (for title)
   useEffect(() => {
     if (!examId) return;
-    fetch(`/api/exams/details/${examId}`)
+    fetch(`https://multilevelexambackend-production.up.railway.app/api/exams/details/${examId}`)
       .then(res => res.json())
       .then(data => setExam(data));
   }, [examId]);
@@ -115,7 +115,7 @@ const StageExam = () => {
         isCorrect: q.correct_answer === answers[q.question_id],
       })),
     };
-    const res = await fetch('/api/exams/submit-stage', {
+    const res = await fetch(`https://multilevelexambackend-production.up.railway.app/api/exams/submit-stage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -125,7 +125,7 @@ const StageExam = () => {
       setSubmitted(true);
       setExamState('completed');
       // Fetch review data and show review page
-      fetch(`/api/exams/review?studentId=${user.id}&examId=${examId}&stageId=${stageId}`)
+      fetch(`https://multilevelexambackend-production.up.railway.app/api/exams/review?studentId=${user.id}&examId=${examId}&stageId=${stageId}`)
         .then(res => {
           if (res.status === 200) {
             return res.json();

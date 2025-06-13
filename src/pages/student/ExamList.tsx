@@ -34,7 +34,7 @@ const ExamList = () => {
     if (user) {
       setLoading(true);
 
-      fetch('/api/exams/exams?studentId=' + user.id)
+      fetch(`https://multilevelexambackend-production.up.railway.app/api/exams/exams?studentId=` + user.id)
         .then(res => res.json())
         .then((data) => {
           setExams(
@@ -54,7 +54,7 @@ const ExamList = () => {
 
   useEffect(() => {
     if (user) {
-      fetch(`/api/exams/progress/${user.id}`)
+      fetch(`https://multilevelexambackend-production.up.railway.app/api/exams/progress/${user.id}`)
         .then(res => res.json())
         .then(data => {
           const progressData: ProgressMap = {};

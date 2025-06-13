@@ -41,13 +41,13 @@ const ExamDetails = () => {
     if (!examId || !user) return;
 
     // Fetch exam details (with stages)
-    fetch(`/api/exams/details/${examId}`)
+    fetch(`https://multilevelexambackend-production.up.railway.app/api/exams/details/${examId}`)
       .then(res => res.json())
       .then(data => setExam(data))
       .catch(() => navigate('/404'));
 
     // Fetch progress for this exam
-    fetch(`/api/exams/${examId}/progress/${user.id}`)
+    fetch(`https://multilevelexambackend-production.up.railway.app/api/exams/${examId}/progress/${user.id}`)
       .then(res => res.json())
       .then(data => {
         // Map progress by stage order
@@ -60,7 +60,7 @@ const ExamDetails = () => {
       });
 
     // Fetch current stage order for this student in this exam
-    fetch(`/api/exams/${examId}/stage-progress/${user.id}`)
+    fetch(`https://multilevelexambackend-production.up.railway.app/api/exams/${examId}/stage-progress/${user.id}`)
       .then(res => res.json())
       .then(data => {
         setCurrentStageOrder(data.current_stage_order || 1);
