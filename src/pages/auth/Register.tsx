@@ -30,7 +30,7 @@ const Register = () => {
       setFormError('Password must be at least 6 characters');
       return;
     }
-    
+  
     await register(name, email, password, role);
   };
 
