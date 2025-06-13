@@ -1,51 +1,62 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import {
-  getExamById,
-  getStudentProgress,
-  canAccessStage,
-  Exam,
-  ExamStage,
-  StudentProgress,
-} from '../../data/mockData';
-import { ChevronLeft, Clock, CheckCircle, XCircle, Clock as LockClosed, Play, Award } from 'lucide-react';
+import { ChevronLeft, Clock, CheckCircle, XCircle, Lock as LockClosed, Play, Award } from 'lucide-react';
 import { motion } from 'framer-motion';
+
+type Stage = {
+  stage_id: string;
+  name: string;
+  description: string;
+  stage_order: number;
+  passing_score: number;
+  time_limit: number;
+};
+
+type Exam = {
+  exam_id: string;
+  name: string;
+  description: string;
+  stages: Stage[];
+};
+
+type StageProgress = {
+  session_id: string;
+  current_stage: number;
+  status: string;
+  passed?: boolean;
+};
 
 const ExamDetails = () => {
   const { user } = useAuth();
   const { examId } = useParams<{ examId: string }>();
   const navigate = useNavigate();
-  
+
   const [exam, setExam] = useState<Exam | null>(null);
-  const [stageProgress, setStageProgress] = useState<{ [stageId: string]: StudentProgress }>({});
+  const [stageProgress, setStageProgress] = useState<{ [stageOrder: number]: StageProgress }>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!examId || !user) return;
 
-    // Get exam details
-    const examData = getExamById(examId);
-    if (!examData) {
-      navigate('/404');
-      return;
-    }
-    setExam(examData);
+    // Fetch exam details (with stages)
+    fetch(`/api/exams/details/${examId}`)
+      .then(res => res.json())
+      .then(data => setExam(data))
+      .catch(() => navigate('/404'));
 
-    // Get progress for each stage
-    const progress = getStudentProgress(user.id, examId);
-    const progressMap: { [stageId: string]: StudentProgress } = {};
-    progress.forEach(p => {
-      progressMap[p.stageId] = p;
-    });
-    setStageProgress(progressMap);
-    
-    // Simulate loading
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 800);
-    
-    return () => clearTimeout(timer);
+    // Fetch progress for this exam
+    fetch(`/api/exams/${examId}/progress/${user.id}`)
+      .then(res => res.json())
+      .then(data => {
+        // Map progress by stage order
+        const progressMap: { [stageOrder: number]: StageProgress } = {};
+        data.forEach((session: any) => {
+          progressMap[session.current_stage] = session;
+        });
+        setStageProgress(progressMap);
+        setLoading(false);
+      });
   }, [examId, user, navigate]);
 
   if (loading) {
@@ -62,26 +73,26 @@ const ExamDetails = () => {
 
   const calculateOverallProgress = () => {
     const totalStages = exam.stages.length;
-    const completedStages = Object.values(stageProgress).filter(p => p.completed && p.passed).length;
-    return Math.round((completedStages / totalStages) * 100);
+    const completedStages = exam.stages.filter(
+      (stage) => stageProgress[stage.stage_order]?.status === 'completed'
+    ).length;
+    return totalStages === 0 ? 0 : Math.round((completedStages / totalStages) * 100);
   };
 
-  const isStageAccessible = (stageId: string) => {
-    if (!user) return false;
-    return canAccessStage(user.id, examId || '', stageId);
+  const isStageAccessible = (stageOrder: number) => {
+    if (stageOrder === 1) return true;
+    const prevProgress = stageProgress[stageOrder - 1];
+    return prevProgress && prevProgress.status === 'completed';
   };
 
-  const getStageStatus = (stage: ExamStage) => {
-    const progress = stageProgress[stage.id];
-    
+  const getStageStatus = (stage: Stage) => {
+    const progress = stageProgress[stage.stage_order];
     if (!progress) {
-      return isStageAccessible(stage.id) ? 'available' : 'locked';
+      return isStageAccessible(stage.stage_order) ? 'available' : 'locked';
     }
-    
-    if (progress.completed) {
+    if (progress.status === 'completed') {
       return progress.passed ? 'passed' : 'failed';
     }
-    
     return 'in_progress';
   };
 
@@ -95,12 +106,12 @@ const ExamDetails = () => {
         <ChevronLeft size={16} className="mr-1" />
         Back to Exams
       </Link>
-      
+
       {/* Exam header */}
       <div className="rounded-lg bg-white p-6 shadow-sm">
-        <h1 className="text-2xl font-bold text-gray-900 md:text-3xl">{exam.title}</h1>
+        <h1 className="text-2xl font-bold text-gray-900 md:text-3xl">{exam.name}</h1>
         <p className="mt-2 text-gray-600">{exam.description}</p>
-        
+
         {/* Overall progress */}
         <div className="mt-6">
           <div className="flex items-center justify-between">
@@ -115,20 +126,20 @@ const ExamDetails = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Stages */}
       <div className="mt-6">
         <h2 className="mb-4 text-xl font-semibold text-gray-900">Exam Stages</h2>
-        
+
         <div className="space-y-4">
           {exam.stages
-            .sort((a, b) => a.order - b.order)
+            .sort((a, b) => a.stage_order - b.stage_order)
             .map((stage, index) => {
               const status = getStageStatus(stage);
-              
+
               return (
                 <motion.div
-                  key={stage.id}
+                  key={stage.stage_id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
@@ -138,7 +149,7 @@ const ExamDetails = () => {
                   {index < exam.stages.length - 1 && (
                     <div className="absolute bottom-0 left-8 top-full z-10 w-0.5 bg-gray-200"></div>
                   )}
-                  
+
                   <div className="flex items-start p-4 md:p-6">
                     {/* Status icon */}
                     <div className="mr-4 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border-2 border-gray-200 bg-white">
@@ -152,27 +163,21 @@ const ExamDetails = () => {
                         <div className="h-3 w-3 rounded-full bg-primary-500"></div>
                       )}
                     </div>
-                    
+
                     {/* Stage info */}
                     <div className="flex-1">
                       <div className="flex flex-col justify-between md:flex-row md:items-center">
                         <h3 className="text-lg font-semibold text-gray-900">
-                          Stage {stage.order}: {stage.title}
+                          Stage {stage.stage_order}: {stage.name}
                         </h3>
                         <div className="mt-2 flex items-center md:mt-0">
                           <Clock size={16} className="mr-1 text-gray-500" />
-                          <span className="text-sm text-gray-500">{stage.duration} minutes</span>
-                          
-                          {stageProgress[stage.id]?.score > 0 && (
-                            <span className="ml-4 text-sm font-medium text-gray-700">
-                              Score: {stageProgress[stage.id].score}%
-                            </span>
-                          )}
+                          <span className="text-sm text-gray-500">{stage.time_limit} minutes</span>
                         </div>
                       </div>
-                      
+
                       <p className="mt-1 text-sm text-gray-600">{stage.description}</p>
-                      
+
                       {/* Stage status and action button */}
                       <div className="mt-4 flex items-center justify-between">
                         <div>
@@ -182,20 +187,20 @@ const ExamDetails = () => {
                               Passed
                             </span>
                           )}
-                          
+
                           {status === 'failed' && (
                             <span className="inline-flex items-center rounded-full bg-error-100 px-2.5 py-0.5 text-xs font-medium text-error-800">
                               <XCircle size={12} className="mr-1" />
                               Failed
                             </span>
                           )}
-                          
+
                           {status === 'in_progress' && (
                             <span className="inline-flex items-center rounded-full bg-warning-100 px-2.5 py-0.5 text-xs font-medium text-warning-800">
                               In Progress
                             </span>
                           )}
-                          
+
                           {status === 'locked' && (
                             <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
                               <LockClosed size={12} className="mr-1" />
@@ -203,10 +208,10 @@ const ExamDetails = () => {
                             </span>
                           )}
                         </div>
-                        
+
                         {status !== 'locked' && (
                           <Link
-                            to={`/exams/${examId}/stage/${stage.id}`}
+                            to={`/exams/${examId}/stage/${stage.stage_id}`}
                             className={`inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium ${
                               status === 'passed'
                                 ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'

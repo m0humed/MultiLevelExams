@@ -13,6 +13,7 @@ import Register from './pages/auth/Register';
 import ExamList from './pages/student/ExamList';
 import ExamDetails from './pages/student/ExamDetails';
 import StageExam from './pages/student/StageExam';
+import ReviewExam from './pages/student/ReviewExam';
 import InstructorDashboard from './pages/instructor/InstructorDashboard';
 import ExamCreate from './pages/instructor/ExamCreate';
 import ExamEdit from './pages/instructor/ExamEdit';
@@ -46,6 +47,7 @@ function App() {
             <Route path="/exams" element={<ExamList />} />
             <Route path="/exams/:examId" element={<ExamDetails />} />
             <Route path="/exams/:examId/stage/:stageId" element={<StageExam />} />
+            <Route path="/exams/:examId/stage/:stageId/review" element={<ReviewExam />} />
           </>
         )}
         

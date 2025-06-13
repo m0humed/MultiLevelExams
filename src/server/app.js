@@ -2,7 +2,9 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import authRoutes from './routes/auth.js'; // Note the .js extension for ES modules
+import authRoutes from './routes/auth.js';
+import ExamsRoutes from './routes/exams.js'; 
+
 
 dotenv.config();
 
@@ -15,6 +17,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/exams', ExamsRoutes);
 
 // Health check route
 app.get('/', (_req, res) => {

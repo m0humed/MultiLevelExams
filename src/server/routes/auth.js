@@ -7,14 +7,12 @@ dotenv.config();
 const router = express.Router();
 
 // Create a new PostgreSQL connection pool
-console.log(process.env.DATABASE_URL);
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
 router.post('/register', async (req, res) => {
   try {
-    
     const { name, email, password, role } = req.body;
 
     if (!name || !email || !password || !role) {
@@ -31,16 +29,24 @@ router.post('/register', async (req, res) => {
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-    
-    // Insert new user
-    await pool.query(
-      `INSERT INTO ${table} (name, email, password_hash) VALUES ($1, $2, $3)`,
+
+    // Insert new user and return the id
+    const insertRes = await pool.query(
+      `INSERT INTO ${table} (name, email, password_hash) VALUES ($1, $2, $3) RETURNING *`,
       [name, email, hashedPassword]
     );
+    const user = insertRes.rows[0];
 
-    console.log(`New ${role} registered:`, { name, email });
-    // Always send a JSON response
-    res.json({ success: true });
+    // Always send a JSON response with the user id
+    res.json({
+      success: true,
+      user: {
+        id: user.student_id || user.instructor_id,
+        name: user.name,
+        email: user.email,
+        role,
+      },
+    });
   } catch (error) {
     console.error('Register error:', error);
     res.status(500).json({ error: 'Server error in Registration Process' });
@@ -69,7 +75,6 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Invalid email or password' });
     }
 
-    // You can add JWT or session logic here if needed
     res.json({
       success: true,
       user: {

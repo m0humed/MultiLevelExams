@@ -118,7 +118,8 @@ CREATE TABLE student_answers (
     question_id UUID NOT NULL REFERENCES questions(question_id),
     selected_answer TEXT,
     is_correct BOOLEAN DEFAULT FALSE,
-    answered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    answered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (session_id, question_id)
 );
 
 -- Performance metrics table (optional, for analytics)
@@ -171,3 +172,13 @@ FROM questions q
 LEFT JOIN student_answers sa ON q.question_id = sa.question_id
 LEFT JOIN exam_sessions es ON sa.session_id = es.session_id
 GROUP BY q.question_id, q.question_text, q.category, q.difficulty;
+
+
+CREATE TABLE student_stage_progress (
+    progress_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    student_id UUID NOT NULL REFERENCES students(student_id) ON DELETE CASCADE,
+    exam_id UUID NOT NULL REFERENCES exams(exam_id) ON DELETE CASCADE,
+    current_stage_order INT NOT NULL CHECK (current_stage_order > 0),
+    reached_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (student_id, exam_id)
+);

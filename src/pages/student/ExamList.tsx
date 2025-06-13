@@ -1,67 +1,90 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { getAvailableExams, getStudentProgress, Exam, StudentProgress } from '../../data/mockData';
 import { BookOpen, ChevronRight, Clock, Award } from 'lucide-react';
 import { motion } from 'framer-motion';
+
+type Exam = {
+  id: string;           // exam_id from DB
+  name: string;         // name from DB
+  description: string;  // description from DB
+  number_of_stages: number;
+  total_time_minutes: number; // total_time_minutes from DB
+};
+
+type ProgressSession = {
+  id: string;
+  exam_id: string;
+  stageId: string;
+  completed: boolean;
+  passed: boolean;
+};
+
+type ProgressMap = {
+  [examId: string]: ProgressSession[];
+};
 
 const ExamList = () => {
   const { user } = useAuth();
   const [exams, setExams] = useState<Exam[]>([]);
-  const [progress, setProgress] = useState<{ [examId: string]: StudentProgress[] }>({});
+  const [progress, setProgress] = useState<ProgressMap>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (user) {
-      // Get available exams
-      const availableExams = getAvailableExams(user.id);
-      setExams(availableExams);
+      setLoading(true);
 
-      // Get progress for each exam
-      const progressData: { [examId: string]: StudentProgress[] } = {};
-      availableExams.forEach(exam => {
-        progressData[exam.id] = getStudentProgress(user.id, exam.id);
-      });
-      setProgress(progressData);
-      
-      // Simulate loading
-      const timer = setTimeout(() => {
-        setLoading(false);
-      }, 800);
-      
-      return () => clearTimeout(timer);
+      fetch('/api/exams/exams?studentId=' + user.id)
+        .then(res => res.json())
+        .then((data) => {
+          setExams(
+            data.map((exam: any) => ({
+              id: exam.exam_id,
+              name: exam.name,
+              description: exam.description,
+              number_of_stages: Number(exam.stage_count),
+              total_time_minutes: Number(exam.total_time_minutes),
+            }))
+          );
+          setLoading(false);
+        })
+        .catch(() => setLoading(false));
     }
   }, [user]);
 
-  // Calculate progress percentage for an exam
+  useEffect(() => {
+    if (user) {
+      fetch(`/api/exams/progress/${user.id}`)
+        .then(res => res.json())
+        .then(data => {
+          const progressData: ProgressMap = {};
+          data.forEach((session: any) => {
+            const examId = String(session.exam_id);
+            const progressSession: ProgressSession = {
+              id: String(session.session_id),
+              exam_id: String(session.exam_id),
+              stageId: String(session.stage_id),
+              completed: Boolean(session.completed),
+              passed: Boolean(session.passed),
+            };
+            if (!progressData[examId]) progressData[examId] = [];
+            progressData[examId].push(progressSession);
+          });
+          setProgress(progressData);
+        });
+    }
+  }, [user]);
+
   const calculateProgress = (examId: string) => {
     const exam = exams.find(e => e.id === examId);
     if (!exam) return 0;
-    
-    const totalStages = exam.stages.length;
-    const completedStages = progress[examId]?.filter(p => p.completed && p.passed).length || 0;
-    
-    return Math.round((completedStages / totalStages) * 100);
-  };
 
-  // Get the next stage for an exam
-  const getNextStage = (examId: string) => {
-    const exam = exams.find(e => e.id === examId);
-    if (!exam) return null;
-    
-    // Find the highest completed stage
-    const stageProgress = progress[examId] || [];
-    const completedStageIds = stageProgress
-      .filter(p => p.completed && p.passed)
-      .map(p => p.stageId);
-    
-    // Get the stages ordered by their order property
-    const orderedStages = [...exam.stages].sort((a, b) => a.order - b.order);
-    
-    // Find the first stage that hasn't been completed
-    const nextStage = orderedStages.find(stage => !completedStageIds.includes(stage.id));
-    
-    return nextStage;
+    const totalStages = exam.number_of_stages;
+    if (!totalStages || !progress[examId] || progress[examId].length === 0) return 0;
+
+    const completedStages = progress[examId]?.filter(p => p.completed && p.passed).length || 0;
+
+    return Math.round((completedStages / totalStages) * 100);
   };
 
   if (loading) {
@@ -87,39 +110,42 @@ const ExamList = () => {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {exams.map((exam, index) => {
-            const progressPercent = calculateProgress(exam.id);
-            const nextStage = getNextStage(exam.id);
-            
+            console.log(`Exam ID: ${exam.id}, Stages: ${exam.number_of_stages}, Progress: ${calculateProgress(exam.id)}`);
+            const hasStages = exam.number_of_stages > 0;
+            const progressPercent = hasStages ? calculateProgress(exam.id) : 0;
+
             return (
-              <motion.div
-                key={exam.id}
+                <motion.div
+                key={`exam-motion-${exam.id}`}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.1 }}
-              >
+                >
                 <Link
-                  to={`/exams/${exam.id}`}
-                  className="block overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md"
+                  to={hasStages ? `/exams/${exam.id}` : "#"}
+                  className={`block overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md ${!hasStages ? "pointer-events-none opacity-60" : ""}`}
+                  tabIndex={hasStages ? 0 : -1}
+                  aria-disabled={!hasStages}
                 >
                   <div className="bg-primary-50 p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
                         <BookOpen size={18} className="mr-2 text-primary-600" />
                         <span className="font-medium text-primary-700">
-                          {exam.stages.length} {exam.stages.length === 1 ? 'Stage' : 'Stages'}
+                          {hasStages ? `${exam.number_of_stages} ${exam.number_of_stages === 1 ? 'Stage' : 'Stages'}` : 'No Stages'}
                         </span>
                       </div>
                       <div className="flex items-center">
                         <Clock size={16} className="mr-1 text-gray-500" />
                         <span className="text-sm text-gray-500">
-                          {exam.stages.reduce((total, stage) => total + stage.duration, 0)} min
+                          {hasStages ? exam.total_time_minutes : 0} min
                         </span>
                       </div>
                     </div>
                   </div>
                   
                   <div className="p-4">
-                    <h3 className="text-lg font-semibold text-gray-900">{exam.title}</h3>
+                    <h3 className="text-lg font-semibold text-gray-900">{exam.name}</h3>
                     <p className="mt-1 text-sm text-gray-600 line-clamp-2">{exam.description}</p>
                     
                     {/* Progress bar */}
@@ -136,17 +162,21 @@ const ExamList = () => {
                       </div>
                     </div>
                     
-                    {/* Next stage */}
+                    {/* Next stage or no stages message */}
                     <div className="mt-4 flex items-center justify-between">
                       <div>
-                        {progressPercent === 100 ? (
+                        {!hasStages ? (
+                          <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
+                            No stages available
+                          </span>
+                        ) : progressPercent === 100 ? (
                           <span className="inline-flex items-center rounded-full bg-success-100 px-2.5 py-0.5 text-xs font-medium text-success-800">
                             <Award size={12} className="mr-1" />
                             Completed
                           </span>
                         ) : (
                           <span className="text-sm text-gray-700">
-                            Next: {nextStage?.title || 'Unknown stage'}
+                            In Progress
                           </span>
                         )}
                       </div>
