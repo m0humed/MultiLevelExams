@@ -66,7 +66,7 @@ const ReviewExam = () => {
     );
   }
 
-  // Map student answers by question_id for quick lookup
+  // Map student answers to question_id for quick lookup
   const answersMap = Object.fromEntries(
     answers.map((a: any) => [a.question_id, a])
   );
@@ -121,12 +121,18 @@ const ReviewExam = () => {
           );
         })}
       </div>
-      <div className="mt-8 flex justify-center">
+      <div className="mt-8 flex justify-center gap-4">
         <button
           className="rounded bg-primary-600 px-6 py-2 text-white hover:bg-primary-700"
           onClick={() => navigate(-1)}
         >
           Back
+        </button>
+        <button
+          className="rounded bg-gray-200 px-6 py-2 text-gray-800 hover:bg-gray-300"
+          onClick={() => navigate(`/exams/${examId}`)}
+        >
+          Exam Details
         </button>
       </div>
     </div>
