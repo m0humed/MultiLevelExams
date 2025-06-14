@@ -149,18 +149,20 @@ const ExamList = () => {
                     <p className="mt-1 text-sm text-gray-600 line-clamp-2">{exam.description}</p>
                     
                     {/* Progress bar */}
-                    <div className="mt-4">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-medium text-gray-700">Progress</span>
-                        <span className="font-medium text-primary-600">{progressPercent}%</span>
-                      </div>
-                      <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-gray-200">
-                        <div
-                          className="h-full rounded-full bg-primary-500"
-                          style={{ width: `${progressPercent}%` }}
-                        ></div>
-                      </div>
+                  {/* 
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-medium text-gray-700">Progress</span>
+                      <span className="font-medium text-primary-600">{progressPercent}%</span>
                     </div>
+                    <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-gray-200">
+                      <div
+                        className="h-full rounded-full bg-primary-500"
+                        style={{ width: `${progressPercent}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  */}
                     
                     {/* Next stage or no stages message */}
                     <div className="mt-4 flex items-center justify-between">
