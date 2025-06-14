@@ -1,9 +1,8 @@
 {
   "version": 2,
-  "rewrites": [
+  "builds": [
     {
-      "source": "/((?!.*\\.).*)",
-      "destination": "/index.html"
-    }
-  ]
+      "src": "package.json",
+      "use": "@vercel/next"
+}]
 }
