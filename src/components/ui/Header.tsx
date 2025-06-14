@@ -40,12 +40,12 @@ const Header = ({ toggleSidebar }: HeaderProps) => {
       {/* Right section */}
       <div className="ml-auto flex items-center space-x-4">
         {/* Notifications */}
-        <button className="relative rounded-full p-1 text-gray-700 hover:bg-gray-100">
+        {/* <button className="relative rounded-full p-1 text-gray-700 hover:bg-gray-100">
           <Bell size={20} />
           <span className="absolute right-0 top-0 flex h-4 w-4 items-center justify-center rounded-full bg-primary-500 text-[10px] font-bold text-white">
             3
           </span>
-        </button>
+        </button> */}
 
         {/* User menu */}
         <div className="relative">
@@ -66,7 +66,7 @@ const Header = ({ toggleSidebar }: HeaderProps) => {
                 <p className="text-sm font-medium">{user?.name}</p>
                 <p className="text-xs text-gray-500">{user?.email}</p>
               </div>
-              <a
+              {/* <a
                 href="#"
                 className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
@@ -77,7 +77,7 @@ const Header = ({ toggleSidebar }: HeaderProps) => {
                 className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
                 Settings
-              </a>
+              </a> */}
               <button
                 onClick={logout}
                 className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100"

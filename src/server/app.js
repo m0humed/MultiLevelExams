@@ -3,7 +3,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
-import ExamsRoutes from './routes/exams.js'; 
+import ExamsRoutes from './routes/exams.js';
+import path from 'path'; // Import path module
 
 
 dotenv.config();

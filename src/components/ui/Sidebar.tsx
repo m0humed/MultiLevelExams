@@ -15,14 +15,14 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
 
   const studentLinks = [
     { path: '/exams', label: 'My Exams', icon: BookOpen },
-    { path: '/settings', label: 'Settings', icon: Settings },
+    //{ path: '/settings', label: 'Settings', icon: Settings },
   ];
 
   const instructorLinks = [
     { path: '/instructor/dashboard', label: 'Dashboard', icon: Layout },
     { path: '/instructor/exams/create', label: 'Create Exam', icon: BookOpen },
     { path: '/instructor/students', label: 'Students', icon: Users },
-    { path: '/settings', label: 'Settings', icon: Settings },
+    //{ path: '/settings', label: 'Settings', icon: Settings },
   ];
 
   const links = user?.role === 'instructor' ? instructorLinks : studentLinks;
